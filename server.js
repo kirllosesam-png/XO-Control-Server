@@ -5,26 +5,34 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    cors: {
+        origin: "*", // مهم جداً للسماح للموبايل بالاتصال
+        methods: ["GET", "POST"]
+    }
+});
 
 // توجيه المتصفح لفتح صفحة التحكم
 app.get('/', (req, res) => {
+    // هذه الصفحة هي التي سيراقبها UptimeRobot
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // التعامل مع الاتصالات
 io.on('connection', (socket) => {
-    console.log('متصل جديد: ' + socket.id);
+    console.log('جهاز متصل الآن: ' + socket.id);
 
     // استقبال الأوامر من لوحة التحكم وإرسالها للموبايل
     socket.on('admin_command', (data) => {
         console.log('إرسال أمر للموبايل:', data.command);
-        io.emit(data.command, { id: Date.now() });
+        // نستخدم broadcast لإرسال الأمر لكل الأجهزة المتصلة ماعدا المرسل (لوحة التحكم)
+        socket.broadcast.emit(data.command, { timestamp: Date.now() });
     });
 
-    // استقبال الإحداثيات من الموبايل
+    // استقبال الإحداثيات من الموبايل (Python/Kivy)
     socket.on('location_update', (data) => {
         console.log('وصلت إحداثيات جديدة:', data);
+        // إرسالها للوحة التحكم لعرضها
         io.emit('display_location', data);
     });
 
@@ -33,8 +41,8 @@ io.on('connection', (socket) => {
     });
 });
 
-// تشغيل السيرفر على بورت 3000 (المناسب لـ Replit)
+// تشغيل السيرفر على البورت الذي يحدده Replit أو 3000
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`السيرفر شغال على الرابط المباشر بورت ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running permanently on port ${PORT}`);
 });
